@@ -26,7 +26,7 @@ struct PromptView: View {
     var appsForUrls: [App] {
         urls.flatMap { url in
             return apps.filter { app in
-                url.host() == app.host
+                url.matchesHost(app.host)
             }
         }
         .filter {

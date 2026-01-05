@@ -19,13 +19,17 @@ struct NewApp: View {
     @State private var openWithPresented = false
     
     private var hostValid: Bool {
+        if host.isEmpty {
+            return true
+        }
+
         let url = if host.starts(with: /https?:\/\//) {
             host
         } else {
             "http://" + host
         }
-        
-        return !host.isEmpty && URL(string: url)?.host() != nil
+
+        return URL(string: url)?.host() != nil
     }
     
     var body: some View {
@@ -36,7 +40,7 @@ struct NewApp: View {
                 )
                 .opacity(0)
             
-            TextField("example.com", text: $host)
+            TextField("example.com or empty for all", text: $host)
                 .font(
                     .system(size: 14)
                 )
@@ -54,15 +58,22 @@ struct NewApp: View {
                 allowedContentTypes: [.application]
             ) {
                 if case .success(let url) = $0 {
-                    let hostUrl = if host.starts(with: /https?:\/\//) {
-                        host
+                    let appHost: String
+
+                    if host.isEmpty {
+                        appHost = ""
                     } else {
-                        "http://" + host
+                        let hostUrl = if host.starts(with: /https?:\/\//) {
+                            host
+                        } else {
+                            "http://" + host
+                        }
+                        appHost = URL(string: hostUrl)!.host()!
                     }
-                    
+
                     apps.append(
                         App(
-                            host: URL(string: hostUrl)!.host()!,
+                            host: appHost,
                             schemeOverride: "",
                             app: url
                         )
@@ -79,44 +90,54 @@ struct NewApp: View {
 struct AppItem: View {
     @Binding var app: App
     @State private var editPresented = false
-    
-    var body: some View {
-        let bundle = Bundle(url: app.app)!
 
-        HStack {
-            Button(action: {
-                editPresented.toggle()
-            }) {
-                Label(app.host, systemImage: "pencil")
+    var body: some View {
+        if let bundle = Bundle(url: app.app) {
+            HStack {
+                Button(action: {
+                    editPresented.toggle()
+                }) {
+                    Label(
+                        app.host.isEmpty ? "*" : app.host,
+                        systemImage: "pencil"
+                    )
                     .font(
                         .system(size: 14)
                     )
                     .foregroundStyle(.primary)
-            }
-            .buttonStyle(.plain)
-            
-            Spacer()
-            
-            
-            Text(bundle.infoDictionary!["CFBundleName"] as! String)
-                .font(
-                    .system(size: 14)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+
+                Text(bundle.infoDictionary!["CFBundleName"] as! String)
+                    .font(
+                        .system(size: 14)
+                    )
+
+
+                Spacer()
+                    .frame(width: 32)
+
+                ShortcutButton(
+                    browserId: bundle.bundleIdentifier!
                 )
-            
-            
-            Spacer()
-                .frame(width: 8)
-            
-            Image(nsImage: NSWorkspace.shared.icon(forFile: bundle.bundlePath))
-                .resizable()
-                .frame(width: 32, height: 32)
-        }
-        .padding(10)
-        .sheet(isPresented: $editPresented) {
-            EditAppForm(
-                app: $app,
-                isPresented: $editPresented
-            )
+
+                Spacer()
+                    .frame(width: 8)
+
+                Image(nsImage: NSWorkspace.shared.icon(forFile: bundle.bundlePath))
+                    .resizable()
+                    .frame(width: 32, height: 32)
+            }
+            .padding(10)
+            .sheet(isPresented: $editPresented) {
+                EditAppForm(
+                    app: $app,
+                    isPresented: $editPresented
+                )
+            }
         }
     }
 }
