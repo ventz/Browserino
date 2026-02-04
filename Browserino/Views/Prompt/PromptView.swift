@@ -23,6 +23,11 @@ struct PromptView: View {
     @State private var selected = 0
     @FocusState private var focused: Bool
 
+    private enum ItemIdentifier: Hashable {
+        case browser(index: Int)
+        case app(index: Int)
+    }
+
     var appsForUrls: [App] {
         urls.flatMap { url in
             return apps.filter { app in
@@ -81,7 +86,7 @@ struct PromptView: View {
                                         isIncognito: NSEvent.modifierFlags.contains(.shift)
                                     )
                                 }
-                                .id(index)
+                                .id(ItemIdentifier.browser(index: index))
                                 .buttonStyle(
                                     SelectButtonStyle(
                                         selected: selected == index
@@ -103,7 +108,7 @@ struct PromptView: View {
                                     ) {
                                         openUrlsInApp(app: app)
                                     }
-                                    .id(visibleBrowsers.count + index)
+                                    .id(ItemIdentifier.app(index: index))
                                     .buttonStyle(
                                         SelectButtonStyle(
                                             selected: selected == visibleBrowsers.count + index
